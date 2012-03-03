@@ -25,6 +25,7 @@ class rssWindow(Frame):
         self._msgqueue = []
         self._t = None
         
+        
         self._titleLabel = Label(self, text = "Die Enmand")
         self._titleLabel.grid()
         

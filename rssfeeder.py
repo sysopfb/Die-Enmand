@@ -28,23 +28,32 @@ class rssWindow(Frame):
         self._titleLabel = Label(self, text = "Die Enmand")
         self._titleLabel.grid()
         
-        self._feedOutput = Label(self, text = "")
-        self._feedOutput.grid(row = 1, column = 0, rowspan = 6, columnspan = 6)
+        self._scrollbar = Scrollbar(self)
+        self._scrollbar.grid(row = 1, column = 1, sticky=N+S)
         
-        self._button = Button(self, text = "Get", bg = "green", command = self._feedServer)
+        self._feedOutput = Text(self, state='disabled', wrap='word', width=80, height=24, yscrollcommand=self._scrollbar.set)
+        self._feedOutput.grid()
+        
+        self._scrollbar.config(command=self._feedOutput.yview)
+        
+        self._button = Button(self, text = "Go", bg = "green", command = self._buttonPress)
         self._button.grid(row = 7, column = 1)
         
-    def _feedServer(self):
-        #self._button["bg"] = "green"
-        #self._button["text"] = "On"
+    def _buttonPress(self):
+        if self._button["text"] == "Stop":
+            self.stop_feed_refresh()
+            self._button["bg"] = "green"
+            self._button["text"] = "Go"
+        else:
+            self._feedServer()
+            self._button["bg"] = "red"
+            self._button["text"] = "Stop"
         
+    def _feedServer(self):
         self.feed_refresh()   
         
-        while len(self._msgqueue) > 0:
-            msg = self._msgqueue.pop()
-            self._feedOutput["text"] += msg
         #self._feedOutput["text"] += "Done\n"
-        self.stop_feed_refresh()
+        #self.stop_feed_refresh()
         
     def stop_feed_refresh(self):
         self._t.cancel()
@@ -70,8 +79,15 @@ class rssWindow(Frame):
                     self._msgqueue.append( entry.title.encode('utf-8') + " : " + entry.link.encode('utf-8') )
                 if NextFeed:
                     break;
-        self._t = threading.Timer( 900.0, self.feed_refresh ) # TODO: make this static
+        self._feedOutput['state'] = 'normal'
+        while len(self._msgqueue) > 0:
+            msg = self._msgqueue.pop()
+            self._feedOutput.insert('end', msg)
+            self._feedOutput.insert('end', '\n')
+        self._feedOutput['state'] = 'disabled'
+        self._t = threading.Timer( 300.0, self.feed_refresh ) # TODO: make this static
         self._t.start()
+
     
     def output_feeds(self):
         while len(msgqueue) > 0:

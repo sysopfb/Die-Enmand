@@ -1,9 +1,14 @@
 #!/usr/bin/python
 # Licensed under the GNU General Public License v3
-#Some of the feed parser came from Akarsh Simhas script but I rewrote most of it
+#Original feed_parser came from Akarsh Simhas script but I rewrote pretty much all of it
+# since then
+#2Mar2012 Added a scrollbar and fixed a few bugs
+#4Mar2012 Added the ability to click links from rss feeds via Tkinter tags
+
 
 
 from Tkinter import *
+import webbrowser
 import feedparser
 import os
 import threading
@@ -20,6 +25,8 @@ class rssWindow(Frame):
                            "http://forum.codecall.net/external.php?type=rss2&lastpost=1", \
                            "http://www.dreamincode.net/rss/featured.php"]
         self._old_entries_file = os.environ.get("HOME") + "/.rss/old-feed-entries"
+        self._links = []
+        self._index = 0
         self._msgqueue = []
         self._t = None
         
@@ -38,8 +45,25 @@ class rssWindow(Frame):
         self._button = Button(self, text = "Go", bg = "green", command = self._buttonPress)
         self._button.grid(row = 7, column = 0)
         
-        self.grid()
+        #Added 04MAR12
+        #Sets up the tag "a" for use with the links in our feeds
+        self._feedOutput.tag_config("a", foreground="blue", underline=1)
+        #Two lines below just make it so the hand cursor is displayed when you
+        # hover over the tag
+        self._feedOutput.tag_bind("a", "<Enter>", self._show_hand_cursor)
+        self._feedOutput.tag_bind("a", "<Leave>", self._show_reg_cursor)
+        #When the tag is clicked call the openurl method
+        self._feedOutput.tag_bind("a", "<Button-1>", self._openurl)
+        self._feedOutput.config(cursor="")
         
+        self.grid()
+    
+    def _show_hand_cursor(self, event):
+        self._feedOutput.config(cursor="hand2")
+        
+    def _show_reg_cursor(self, event):
+        self._feedOutput.config(cursor="")
+    
     def _buttonPress(self):
         if self._button["text"] == "Stop":
             self.stop_feed_refresh()
@@ -55,6 +79,16 @@ class rssWindow(Frame):
         
     def stop_feed_refresh(self):
         self._t.cancel()
+        
+    def _openurl(self, event):
+        idx = int(event.widget.tag_names(CURRENT)[1])
+        webbrowser.open_new(self._links[idx])
+        
+    def _pull_link(self, msg):
+        lst = msg.split(':', 1)
+        addr = lst.pop().strip()
+        info = lst.pop().strip()
+        return (info, addr)
         
     def feed_refresh(self):
             
@@ -78,8 +112,21 @@ class rssWindow(Frame):
         self._feedOutput['state'] = 'normal'
         while len(self._msgqueue) > 0:
             msg = self._msgqueue.pop()
-            self._feedOutput.insert('end', msg)
+            
+            #Added 04Mar12
+            #This block of code sets up the links from the rss feeds to be clickable
+            (info, addr) = self._pull_link(msg)
+            self._feedOutput.insert('end', info)
+            self._feedOutput.insert('end', " : ")
+            #The "a" tag is defined in __init__
+            self._feedOutput.insert('end', addr, ("a", str(self._index)))
+            #Append each link in order
+            self._links.append(addr)
+            #Keep an index of how far we're in to our list of links
+            self._index += 1
+            
             self._feedOutput.insert('end', '\n')
+            
         self._feedOutput['state'] = 'disabled'
         self._t = threading.Timer( 300.0, self.feed_refresh ) # TODO: make this static
         self._t.start()

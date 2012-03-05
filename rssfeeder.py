@@ -4,11 +4,13 @@
 # since then
 #2Mar2012 Added a scrollbar and fixed a few bugs
 #4Mar2012 Added the ability to click links from rss feeds via Tkinter tags
-
+#5Mar2012 Fixed a bug when the incoming feed had more than one : in the info
+# used regex which should of been used to begin with
 
 
 from Tkinter import *
 import webbrowser
+import re
 import feedparser
 import os
 import threading
@@ -85,9 +87,9 @@ class rssWindow(Frame):
         webbrowser.open_new(self._links[idx])
         
     def _pull_link(self, msg):
-        lst = msg.split(':', 1)
+        lst = re.split(r':[^//]', msg)
         addr = lst.pop().strip()
-        info = lst.pop().strip()
+        info = " : ".join(lst)
         return (info, addr)
         
     def feed_refresh(self):

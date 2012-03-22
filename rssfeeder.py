@@ -15,23 +15,49 @@ import feedparser
 import os
 import threading
 import time
+import cPickle as pickle
 
 class rssWindow(Frame):
     
     def __init__(self):
         Frame.__init__(self)
         self.master.title("Incoming RSS feeds")
-        self._feed_list = ["http://rss.cnn.com/rss/cnn_world.rss", \
-                           "http://feeds.bbci.co.uk/news/rss.xml?edition=int", \
-                           "http://rss.cnn.com/rss/cnn_us.rss", \
-                           "http://forum.codecall.net/external.php?type=rss2&lastpost=1", \
-                           "http://www.dreamincode.net/rss/featured.php"]
+        self._feed_list = []
         self._old_entries_file = os.environ.get("HOME") + "/.rss/old-feed-entries"
+        self._settings_file = os.environ.get("HOME") + "/.rss/settings.dat"
         self._links = []
         self._index = 0
         self._msgqueue = []
         self._t = None
+        self._rssfeedvars = []
         
+        #See if there's a settings file or not
+        try:
+            self._fp = open(self._settings_file, "rb")
+        except IOError:
+            self._fp = open(self._settings_file, "wb")
+        
+        try:
+            self._feed_list = pickle.load(self._fp)
+        except IOError:
+            print "Settings file not found"
+            self._feed_list.append("http://rss.cnn.com/rss/cnn_world.rss")
+        except EOFError:
+            print "Generating default configuration"
+            self._feed_list.append("http://rss.cnn.com/rss/cnn_world.rss")
+        
+        self._fp.close()
+        
+        #Menu
+        #Added 22 MAR
+        self.menubar = Menu(self)
+        
+        filemenu = Menu(self.menubar, tearoff=0)
+        filemenu.add_command(label="Settings", command=self.settings)
+        self.menubar.add_cascade(label="File", menu=filemenu)
+        
+        self.menubar.add_command(label="Quit", command = quit)
+        self.master.config(menu=self.menubar)
         
         self._titleLabel = Label(self, text = "Die Enmand")
         self._titleLabel.grid()
@@ -59,6 +85,43 @@ class rssWindow(Frame):
         self._feedOutput.config(cursor="")
         
         self.grid()
+        
+    #Added 22 Mar
+    #settings window to put in rss feeds
+    def settings(self):
+        settwnd = Toplevel()
+        settwnd.title("Settings")
+        settwnd.grid()
+        
+        #Entry Vars
+        self._rssfeedvars = []
+        for i in xrange(8):
+            self._rssfeedvars.append(StringVar())
+        
+        #Entry Fields
+        entryfields = []
+        for i in xrange(8):
+            entryfields.append(Entry(settwnd, width=40 ,textvariable = self._rssfeedvars[i]))
+            entryfields[i].grid()
+            try:
+                entryfields[i].insert(0, self._feed_list[i])
+                self._rssfeedvars[i].set(self._feed_list[i])
+            except IndexError:
+                None
+        
+        savebutton = Button(settwnd, text = "Save", command = self._save)
+        savebutton.grid()
+        #Might add a quit button later but I'll need to setup a new pane for it
+        #Button(settwnd, text = "Quit", command = settwnd.destroy).grid(column = 2)
+        
+    #Added 22 MAr
+    #Save function for the settings menu item
+    def _save(self):
+        self._feed_list = []
+        for i in xrange(8):
+            if self._rssfeedvars[i].get() != '':
+                self._feed_list.append(self._rssfeedvars[i].get())
+        pickle.dump(self._feed_list, open(self._settings_file, "wb"))
     
     def _show_hand_cursor(self, event):
         self._feedOutput.config(cursor="hand2")

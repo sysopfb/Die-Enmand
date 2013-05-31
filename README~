@@ -1,7 +1,3 @@
 Just a gui on a basic python script that pulls from RSS feeds
 
 I named it Die Enmand just because enmand is this really great guy I know and "The Enmand" just seemed to fit.
-
-Script self installs as of version 1.0.5 commit
-In order to run the code you need the feedparser python package.
-Code known working on Python 2.7.5

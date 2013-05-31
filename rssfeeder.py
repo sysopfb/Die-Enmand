@@ -6,7 +6,11 @@
 #4Mar2012 Added the ability to click links from rss feeds via Tkinter tags
 #5Mar2012 Fixed a bug when the incoming feed had more than one : in the info
 # used regex which should of been used to begin with
+#30May2013 Added support for different OS paths
 
+#Tested on: Python 2.7.5
+#Requires feedparser package
+#  feedparse requires setuptools package
 
 from Tkinter import *
 import webbrowser
@@ -17,19 +21,31 @@ import threading
 import time
 import cPickle as pickle
 
+
 class rssWindow(Frame):
     
     def __init__(self):
         Frame.__init__(self)
         self.master.title("Incoming RSS feeds")
         self._feed_list = []
-        self._old_entries_file = os.environ.get("HOME") + "/.rss/old-feed-entries"
-        self._settings_file = os.environ.get("HOME") + "/.rss/settings.dat"
+        self._old_entries_file = os.environ.get("HOME") + os.sep + ".rss" + os.sep + "old-feed-entries"
+        self._settings_file = os.environ.get("HOME") + os.sep + ".rss" + os.sep + "settings.dat"
         self._links = []
         self._index = 0
         self._msgqueue = []
         self._t = None
         self._rssfeedvars = []
+
+        #Check if our directory exists
+        if not '.rss' in os.listdir(os.environ.get("HOME")):
+            os.mkdir(os.environ.get("HOME") + os.sep + ".rss")
+        
+        #See if there's a entries file or not
+        try:
+            temp = open(self._old_entries_file, "r")
+        except IOError:
+            temp = open(self._old_entries_file, "w")
+        temp.close()
         
         #See if there's a settings file or not
         try:
@@ -156,7 +172,6 @@ class rssWindow(Frame):
         return (info, addr)
         
     def feed_refresh(self):
-            
         FILE = open( self._old_entries_file, "r" )
         filetext = FILE.read()
         FILE.close()

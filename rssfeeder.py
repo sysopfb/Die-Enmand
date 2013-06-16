@@ -8,18 +8,18 @@
 # used regex which should of been used to begin with
 #30May2013 Added support for different OS paths
 
-#Tested on: Python 2.7.5
+#Tested on: Python 3.3
 #Requires feedparser package
 #  feedparse requires setuptools package
 
-from Tkinter import *
+from tkinter import *
 import webbrowser
 import re
 import feedparser
 import os
 import threading
 import time
-import cPickle as pickle
+import pickle as pickle
 
 
 class rssWindow(Frame):
@@ -56,10 +56,10 @@ class rssWindow(Frame):
         try:
             self._feed_list = pickle.load(self._fp)
         except IOError:
-            print "Settings file not found"
+            print("Settings file not found")
             self._feed_list.append("http://rss.cnn.com/rss/cnn_world.rss")
         except EOFError:
-            print "Generating default configuration"
+            print("Generating default configuration")
             self._feed_list.append("http://rss.cnn.com/rss/cnn_world.rss")
         
         self._fp.close()
@@ -111,12 +111,12 @@ class rssWindow(Frame):
         
         #Entry Vars
         self._rssfeedvars = []
-        for i in xrange(8):
+        for i in range(8):
             self._rssfeedvars.append(StringVar())
         
         #Entry Fields
         entryfields = []
-        for i in xrange(8):
+        for i in range(8):
             entryfields.append(Entry(settwnd, width=40 ,textvariable = self._rssfeedvars[i]))
             entryfields[i].grid()
             try:
@@ -134,7 +134,7 @@ class rssWindow(Frame):
     #Save function for the settings menu item
     def _save(self):
         self._feed_list = []
-        for i in xrange(8):
+        for i in range(8):
             if self._rssfeedvars[i].get() != '':
                 self._feed_list.append(self._rssfeedvars[i].get())
         pickle.dump(self._feed_list, open(self._settings_file, "wb"))
@@ -179,14 +179,14 @@ class rssWindow(Frame):
             NextFeed = False
             d = feedparser.parse( feed )
             for entry in d.entries:
-                id = entry.link.encode('utf-8')+entry.title.encode('utf-8')
+                id = entry.link+entry.title
                 if id in filetext:
                     NextFeed = True
                 else:
                     FILE = open( self._old_entries_file, "a" )
                     FILE.write( id + "\n" )
                     FILE.close()
-                    self._msgqueue.append( entry.title.encode('utf-8') + " : " + entry.link.encode('utf-8') )
+                    self._msgqueue.append( entry.title + " : " + entry.link)
                 if NextFeed:
                     break;
         self._feedOutput['state'] = 'normal'
